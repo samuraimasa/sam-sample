@@ -1,74 +1,28 @@
 package main
 
 import (
-	"context"
+	"app/controller"
 	"encoding/json"
 	"fmt"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"os"
 )
 
-var db *dynamodb.DynamoDB
-var dbEndpoint = "http://host.docker.internal:4569"
-var region = "ap-northeast-1"
-var testTable = "local_company_table"
-
-type CompanyResponse struct {
-	Company string `json:"company"`
-	Year    string `json:"year"`
-}
-
-func write(ctx context.Context, tableName string, v interface{}) error {
-	av, err := dynamodbattribute.MarshalMap(v)
-
-	if err != nil {
-		return fmt.Errorf("dynamodb attribute marshalling map: %w", err)
-	}
-	i := &dynamodb.PutItemInput{
-		Item:      av,
-		TableName: aws.String(tableName),
+func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	switch {
+		case request.HTTPMethod == "GET" && request.Path == "/hello":
+			return controller.HogeController{}.Index(request)
 	}
 
-	if _, err = db.PutItemWithContext(ctx, i); err != nil {
-		return fmt.Errorf("dynamodb put item: %w", err)
-	}
-	return nil
-}
-
-func handler(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	sess := session.Must(session.NewSession(&aws.Config{
-		Endpoint: aws.String(dbEndpoint),
-		Region:   aws.String(region),
-	}))
-	db = dynamodb.New(sess)
-
-	response := CompanyResponse{
-		Company: "Future",
-		Year:    "1989",
-	}
-
-	jsonBytes, _ := json.Marshal(response)
-
-	if err := write(ctx, testTable, response); err != nil {
-		fmt.Print("%s", err)
-		return events.APIGatewayProxyResponse{
-			Body:       string(jsonBytes),
-			StatusCode: 500,
-		}, nil
-	}
-
+	jsonBytes, _ := json.Marshal(map[string]interface{}{"error" : "path error"})
 	return events.APIGatewayProxyResponse{
 		Body:       string(jsonBytes),
-		StatusCode: 200,
+		StatusCode: 400,
 	}, nil
 }
 
 func main() {
+	fmt.Println(os.Getenv("PARAM1"))
 	lambda.Start(handler)
 }

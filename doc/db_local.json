@@ -1,5 +1,5 @@
 {
-  "TableName": "local_company_table",
+  "TableName": "hoge_test",
   "KeySchema": [
     {
       "AttributeName": "company",

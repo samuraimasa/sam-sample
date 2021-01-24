@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  go:
+    build:
+      context: ./sam-app/sam-app
+#    command: GOOS=linux GOARCH=amd64 go build main.go
+    command: go build main.go
+    networks:
+      - samapp
+    volumes:
+      - ./sam-app/sam-app:/go:cached
+
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:0.10.9
+    networks:
+      - samapp
+    ports:
+      - 4569:4569 # dynamodb
+      - 4572:4572 # s3
+    environment:
+      - SERVICES=dynamodb,s3
+      - DOCKER_HOST=unix:///var/run/docker.sock
+
+networks:
+  samapp:
+    name: samapp
